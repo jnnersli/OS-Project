@@ -5,7 +5,27 @@
 #include "scheduler.h"
 #include "scheduling_policy.h"
 
+/*
+** every single variable/function made for the project ends with PROJ
+
+1. QUANTA_FREQ_PROJ -> how long the quanta is
+2. current_quanta_proj -> how far into the current quanta are we.
+
+
+
+Here I am going to create a variable QUANTA_FREQ_PROJ = 5*Tick_Freq
+and replace the TICK_FREQ in the function
+hal_cpu_systimer_start(TICK_FREQ,tick_callback) to hal_cpu_systimer_start(QUANTA_FREQ_PROJ, tick_callback)
+
+
+if(current_quanta_proj == QUANTA_FREQ_PROJ){}else{} - this is for the part two in the tick_callback() function
+
+
+
+*/
+
 #define TICK_FREQ		3
+#define QUANTA_FREQ_PROJ     15	// project part 1
 #define CONTEXT_SIZE    16
 #define INITIAL_APSR    (1 << 24) //Bit 24 is the Thumb bit
 #define OFFSET_LR       13
@@ -22,6 +42,7 @@ static tProcessList proc_list;			// process list
 static tMiniProcess* wait_list[10];		//waiting list
 static tMiniProcess* active_proc;		//The active process
 static uint32_t proc_count = 0;
+static uint32_t current_quanta_proj = 0;	// current_quanta_proj starts with zero
 
 //A null process (used to mark the lack of an active process)
 static tMiniProcess null_proc = { 
@@ -51,8 +72,9 @@ void scheduler_init(void){
 	
 	//Create idle process/thread
 	//(we need one!)
-	scheduler_thread_create( idle_process_thread, "idle process thread", 256 );
-}
+	scheduler_thread_create( idle_process_thread, "idle process thread", 256 );  // GS idle process
+}// GS: this is the process created when scheduler_init() function is called
+
 
 /*
 *	The infamous tick callback
@@ -61,27 +83,37 @@ void scheduler_init(void){
 */
 __attribute__((naked)) static void tick_callback(void){
 	
-	//save software context
-	hal_cpu_save_context();
 	
-	//Not the null process?
-	//(this'll skiip hal_cpu_get_psp() on the very first tick)
-	if( active_proc->state != ProcessStateNull ){
-		//save SP
-		active_proc->sp = hal_cpu_get_psp();
+	current_quanta_proj = current_quanta_proj + 1;
+
+	if(current_quanta_proj == QUANTA_FREQ_PROJ){
+		
+		// here goes the house keeping function
+
+	}else{
+	
+		//save software context
+		hal_cpu_save_context();
+	
+		//Not the null process?
+		//(this'll skiip hal_cpu_get_psp() on the very first tick)
+		if( active_proc->state != ProcessStateNull ){
+			//save SP
+			active_proc->sp = hal_cpu_get_psp();
+		}
+	
+		//get next active process
+		active_proc = scheduling_policy_next( active_proc, &proc_list );
+	
+		//restore SP
+		hal_cpu_set_psp( active_proc->sp );
+	
+		//restore software context
+		hal_cpu_restore_context();
+	
+		//give CPU to active process
+		hal_cpu_return_exception_user_mode();
 	}
-	
-	//get next active process
-	active_proc = scheduling_policy_next( active_proc, &proc_list );
-	
-	//restore SP
-	hal_cpu_set_psp( active_proc->sp );
-	
-	//restore software context
-	hal_cpu_restore_context();
-	
-	//give CPU to active process
-	hal_cpu_return_exception_user_mode();
 }
 
 /*
