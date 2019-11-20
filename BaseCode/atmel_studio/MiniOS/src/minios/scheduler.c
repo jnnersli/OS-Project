@@ -86,12 +86,13 @@ __attribute__((naked)) static void tick_callback(void){
 	
 	current_quanta_proj = current_quanta_proj + 1;
 
-	if(current_quanta_proj == QUANTA_FREQ_PROJ){
+	if(current_quanta_proj < QUANTA_FREQ_PROJ){
 		
-		// here goes the house keeping function
+		// here goes the house keeping function which do nothing in Part 1
 
 	}else{
-	
+		current_quanta_proj = 0;
+		
 		//save software context
 		hal_cpu_save_context();
 	
