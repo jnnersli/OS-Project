@@ -119,6 +119,7 @@ void console_begin( void ){
 	//Begin...
 	uint8_t cmd[MAX_COMMAND_LEN + 1];
 	uint8_t param[MAX_PARAM_LEN + 1]; //only 1 param is supported for now
+	uint8_t priority;
 	
 	while( true ){
 		//Shows prompt
@@ -143,7 +144,7 @@ void console_begin( void ){
 			uint32_t sched_rval;
 			uint32_t loader_rval;
 			
-			sched_rval = scheduler_process_create( cmd, cmd, &loader_rval );
+			sched_rval = scheduler_process_create( cmd, cmd, cmd, &loader_rval ); //added another arg for priority (just cmd for now)
 			
 			if( sched_rval == SCHEDULER_PROCESS_CREATE_SUCCESS ){
 				//process creation went fine, halt

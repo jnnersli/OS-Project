@@ -110,8 +110,9 @@ void syscalls_entry_point(void){
 		break;
 
 		//Scheduler	
-		case SVCProcessCreate:		scheduler_process_create( (uint8_t*)arg0, (uint8_t*)arg1, (uint32_t*)arg2 );	break;
-		case SVCThreadCreate:		scheduler_thread_create( (uint8_t*)arg0, (uint8_t*)arg1, (uint32_t)arg2 );		break;
+									//added args for priority to process and thread create
+		case SVCProcessCreate:		scheduler_process_create( (uint8_t*)arg0, (uint8_t*)arg1, (uint8_t*)arg2, (uint32_t*)arg3 );	break;
+		case SVCThreadCreate:		scheduler_thread_create( (uint8_t*)arg0, (uint8_t*)arg1, (uint8_t*)arg2, (uint32_t)arg3 );		break;
 		case SVCProcessStop:		scheduler_process_current_stop();												break;
 		
 		//Parallel IO

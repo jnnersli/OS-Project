@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include "scheduling_policy.h"
 
-#define TICK_FREQ		3
+#define TICK_FREQ		3	//represents the length of time a process can run for before a tick occurs
 #define CONTEXT_SIZE    16
 #define INITIAL_APSR    (1 << 24) //Bit 24 is the Thumb bit
 #define OFFSET_LR       13
@@ -51,7 +51,7 @@ void scheduler_init(void){
 	
 	//Create idle process/thread
 	//(we need one!)
-	scheduler_thread_create( idle_process_thread, "idle process thread", 256 );
+	scheduler_thread_create( idle_process_thread, "idle process thread", 0, 256 );
 }
 
 /*
@@ -126,7 +126,7 @@ __attribute__((naked)) static void low_pty_callback(void){
 *
 *	Creates a process from a binary in nvmem. Ticking here begins!
 */
-uint32_t scheduler_process_create( uint8_t* binary_file_name, uint8_t* name, uint32_t* loader_rval ){	
+uint32_t scheduler_process_create( uint8_t* binary_file_name, uint8_t* name, uint8_t* priority, uint32_t* loader_rval ){	
 	tMemRegion proc_memregion;
 	uint32_t stack_sz;
 	
@@ -139,6 +139,7 @@ uint32_t scheduler_process_create( uint8_t* binary_file_name, uint8_t* name, uin
 
 	//Set process info
 	proc_list.list[proc_list.count].name = name;
+	proc_list.list[proc_list.count].priority = priority;
 	proc_list.list[proc_list.count].state = ProcessStateReady;
 	
 	//Allocate space for "fake" context
@@ -174,10 +175,11 @@ uint32_t scheduler_process_create( uint8_t* binary_file_name, uint8_t* name, uin
 *   no  difference between a process and a thread.
 *
 */
-uint32_t scheduler_thread_create( uint8_t* thread_code, uint8_t* name, uint32_t stack_sz ){
+uint32_t scheduler_thread_create( uint8_t* thread_code, uint8_t* name, uint8_t* priority, uint32_t stack_sz ){
 	
 	//Set process info
 	proc_list.list[proc_list.count].name = name;
+	proc_list.list[proc_list.count].priority = priority;
 	proc_list.list[proc_list.count].state = ProcessStateReady;
 	
 	//Allocate space for "fake" context
